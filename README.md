@@ -9,6 +9,8 @@ This is an experiment. The development of MTT heavly involves AI such as ChatGPT
 ## Setup
 1. Use your prefered pythohn virtual environment. Example `virtualenv`:
     ```bash
+    # Make sure your Python is >= 3.10
+    
     # If virtual env not created
     $ python3 -m venv mtt
 

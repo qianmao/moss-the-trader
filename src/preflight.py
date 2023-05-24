@@ -1,51 +1,45 @@
+import ccxt
 import os
-from binance.client import Client
 from rich.console import Console
 from datetime import datetime
 
-# Enter your Binance API credentials here
 BINANCE_API_KEY = os.getenv('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.getenv('BINANCE_API_SECRET')
 
 console = Console()
 
 with console.status('[bold green]preflight check...') as status:
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET, tld='us')
-    console.log('[bold]:white_check_mark: Connected to Binance')
+    supported_exchanges = ' '.join(ccxt.exchanges)
+    console.log('[bold]:white_check_mark: Supported exchanges: ' + supported_exchanges)
 
-    client.ping()
-    console.log('[bold]:white_check_mark: Pinged the server')
+    exchange = ccxt.binanceus({
+        'apiKey': BINANCE_API_KEY,
+        'secret': BINANCE_API_SECRET,
+    })
+    console.log('[bold]:white_check_mark: Connected to BinanceUS')
 
-    time_res = client.get_server_time()
-    timestamp_millis = time_res['serverTime']
-    datetime = str(datetime.fromtimestamp(time_res['serverTime']/1000))
+    timestamp_millis = exchange.fetch_time()
+    datetime = str(datetime.fromtimestamp(timestamp_millis/1000))
     console.log('[bold]:white_check_mark: Binance server timne: ' + datetime + ' (' + str(timestamp_millis) + ')')
 
-    exchange_info = client.get_exchange_info()
-    console.log('[bold]:white_check_mark: Succesfully fetched exchange info.')
+    order_book = exchange.fetch_order_book(symbol='BTCUSD', limit=1)
+    console.log('[bold]:white_check_mark: Succesfully fetched order book for BTCUSD: ' + str(order_book))
 
-    prices = client.get_all_tickers()
-    console.log('[bold]:white_check_mark: Succesfully fetched all tickers')
+    ticker = exchange.fetch_ticker(symbol='ETHUSD')
+    console.log('[bold]:white_check_mark: Succesfully fetched ticker for ETHUSD: ' + str(ticker))
 
-    depth = client.get_order_book(symbol='BTCUSD')
-    console.log('[bold]:white_check_mark: Succesfully fetched order book for BTCUSD')
+    klines = exchange.fetch_ohlcv(symbol='DOGEUSD', timeframe='1m', limit=1)
+    console.log('[bold]:white_check_mark: Succesfully fetched klines for DOGEUSD: ' + str(klines))
 
-    # fetch 30 minute klines for the last month of 2022
-    klines = client.get_historical_klines("ETHUSDT", Client.KLINE_INTERVAL_30MINUTE, "1 Dec, 2022", "1 Jan, 2023")
-    console.log('[bold]:white_check_mark: Succesfully fetched historical klines for ETHUSDT')
+    trade = exchange.fetch_trades(symbol='SOLUSD', limit=1)
+    console.log('[bold]:white_check_mark: Succesfully fetched trades for SOLUSD: ' + str(trade))
 
-    account_info = client.get_account()
-    console.log('[bold]:white_check_mark: Succesfully fetched account info')
+    account_balance = exchange.fetch_balance()
+    console.log('[bold]:white_check_mark: Succesfully fetched account balance.')
 
-    usdt_balance = client.get_asset_balance(asset='USDT')
-    console.log('[bold]:white_check_mark: Succesfully fetched USDT balance: ' + str(usdt_balance))
-
-    test_order = client.create_test_order(
-        symbol='BTCUSDT',
-        side=Client.SIDE_BUY,
-        type=Client.ORDER_TYPE_MARKET,
-        quantity=1)
-    console.log('[bold]:white_check_mark: Succesfully placed test order')
+    # Make sure you set test params otherwise you will place REAL order!
+    order = exchange.create_order('USDTUSD', 'limit', 'buy', 1.0, 1.0, {'test': True})
+    console.log('[bold]:white_check_mark: Succesfully placed test order: ' + str(order))
 
     console.log('[bold green]All checks passed!')
 
